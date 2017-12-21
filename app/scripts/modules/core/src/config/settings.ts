@@ -1,4 +1,4 @@
-import { cloneDeep, merge } from 'lodash';
+import { cloneDeep, merge } from "lodash";
 
 export interface IProviderSettings {
   defaults: any;
@@ -45,7 +45,7 @@ export interface IFeatures {
 export interface ISpinnakerSettings {
   [key: string]: any;
 
-  analytics: { ga?: string; };
+  analytics: { ga?: string };
   authEnabled: boolean;
   authEndpoint: string;
   authTtl: number;
@@ -66,9 +66,9 @@ export interface ISpinnakerSettings {
   };
   executionWindow?: {
     atlas?: {
-      regions: { label: string, baseUrl: string }[];
+      regions: { label: string; baseUrl: string }[];
       url: string;
-    }
+    };
   };
   feature: IFeatures;
   gateUrl: string;
@@ -81,6 +81,7 @@ export interface ISpinnakerSettings {
   resetProvider: (provider: string) => () => void;
   resetToOriginal: () => void;
   searchVersion: 1 | 2;
+  securityGroupsReadOnly: boolean;
   triggerTypes: string[];
 }
 
@@ -90,13 +91,13 @@ export const SETTINGS: ISpinnakerSettings = (<any>window).spinnakerSettings;
 SETTINGS.feature = SETTINGS.feature || {};
 SETTINGS.analytics = SETTINGS.analytics || {};
 SETTINGS.providers = SETTINGS.providers || {};
-SETTINGS.defaultTimeZone = SETTINGS.defaultTimeZone || 'America/Los_Angeles';
+SETTINGS.defaultTimeZone = SETTINGS.defaultTimeZone || "America/Los_Angeles";
 
 // A helper to make resetting settings to steady state after running tests easier
 const originalSettings: ISpinnakerSettings = cloneDeep(SETTINGS);
 SETTINGS.resetToOriginal = () => {
   Object.keys(SETTINGS)
-    .filter(k => typeof SETTINGS[k] !== 'function') // maybe don't self-destruct
+    .filter(k => typeof SETTINGS[k] !== "function") // maybe don't self-destruct
     .forEach(k => delete SETTINGS[k]);
   merge(SETTINGS, originalSettings);
 };
@@ -105,7 +106,7 @@ SETTINGS.resetProvider = (provider: string) => {
   return () => {
     const providerSettings: IProviderSettings = SETTINGS.providers[provider];
     Object.keys(providerSettings)
-      .filter(k => typeof (providerSettings as any)[k] !== 'function')
+      .filter(k => typeof (providerSettings as any)[k] !== "function")
       .forEach(k => delete (providerSettings as any)[k]);
     merge(providerSettings, originalSettings.providers[provider]);
   };

@@ -1,79 +1,117 @@
-'use strict';
+"use strict";
 
-const angular = require('angular');
-import _ from 'lodash';
+const angular = require("angular");
+import _ from "lodash";
 
 import {
   CLOUD_PROVIDER_REGISTRY,
   CONFIRMATION_MODAL_SERVICE,
   RECENT_HISTORY_SERVICE,
   SECURITY_GROUP_READER,
-  SECURITY_GROUP_WRITER
-} from '@spinnaker/core';
-
-module.exports = angular.module('spinnaker.amazon.securityGroup.details.controller', [
-  require('@uirouter/angularjs').default,
-  SECURITY_GROUP_READER,
   SECURITY_GROUP_WRITER,
-  CONFIRMATION_MODAL_SERVICE,
-  require('../clone/cloneSecurityGroup.controller.js').name,
-  CLOUD_PROVIDER_REGISTRY,
-  RECENT_HISTORY_SERVICE,
-])
-  .controller('awsSecurityGroupDetailsCtrl', function ($scope, $state, resolvedSecurityGroup, app,
-                                                    confirmationModalService, securityGroupWriter, securityGroupReader,
-                                                    recentHistoryService, $uibModal, cloudProviderRegistry) {
+  SETTINGS
+} from "@spinnaker/core";
 
+module.exports = angular
+  .module("spinnaker.amazon.securityGroup.details.controller", [
+    require("@uirouter/angularjs").default,
+    SECURITY_GROUP_READER,
+    SECURITY_GROUP_WRITER,
+    CONFIRMATION_MODAL_SERVICE,
+    require("../clone/cloneSecurityGroup.controller.js").name,
+    CLOUD_PROVIDER_REGISTRY,
+    RECENT_HISTORY_SERVICE
+  ])
+  .controller("awsSecurityGroupDetailsCtrl", function(
+    $scope,
+    $state,
+    resolvedSecurityGroup,
+    app,
+    confirmationModalService,
+    securityGroupWriter,
+    securityGroupReader,
+    recentHistoryService,
+    $uibModal,
+    cloudProviderRegistry
+  ) {
     this.application = app;
     const application = app;
     const securityGroup = resolvedSecurityGroup;
 
     // needed for standalone instances
-    $scope.detailsTemplateUrl = cloudProviderRegistry.getValue('aws', 'securityGroup.detailsTemplateUrl');
+    $scope.detailsTemplateUrl = cloudProviderRegistry.getValue(
+      "aws",
+      "securityGroup.detailsTemplateUrl"
+    );
+
+    $scope.securityGroupSettings = {
+      readOnly: SETTINGS.securityGroupsReadOnly,
+      label: SETTINGS.securityGroupsReadOnly ? "View" : "Edit"
+    };
 
     $scope.state = {
       loading: true,
-      standalone: app.isStandalone,
+      standalone: app.isStandalone
     };
 
     function extractSecurityGroup() {
-      return securityGroupReader.getSecurityGroupDetails(application, securityGroup.accountId, securityGroup.provider, securityGroup.region, securityGroup.vpcId, securityGroup.name).then(function (details) {
-        $scope.state.loading = false;
+      return securityGroupReader
+        .getSecurityGroupDetails(
+          application,
+          securityGroup.accountId,
+          securityGroup.provider,
+          securityGroup.region,
+          securityGroup.vpcId,
+          securityGroup.name
+        )
+        .then(function(details) {
+          $scope.state.loading = false;
 
-        if (!details || _.isEmpty( details )) {
-          fourOhFour();
-        } else {
-          const applicationSecurityGroup = securityGroupReader.getApplicationSecurityGroup(application, securityGroup.accountId, securityGroup.region, securityGroup.name);
+          if (!details || _.isEmpty(details)) {
+            fourOhFour();
+          } else {
+            const applicationSecurityGroup = securityGroupReader.getApplicationSecurityGroup(
+              application,
+              securityGroup.accountId,
+              securityGroup.region,
+              securityGroup.name
+            );
 
-          angular.extend(securityGroup, applicationSecurityGroup, details);
-          $scope.securityGroup = securityGroup;
-          $scope.ipRules = buildIpRulesModel(securityGroup);
-          $scope.securityGroupRules = buildSecurityGroupRulesModel(securityGroup);
-        }
-      },
-        fourOhFour
-      );
+            angular.extend(securityGroup, applicationSecurityGroup, details);
+            $scope.securityGroup = securityGroup;
+            $scope.ipRules = buildIpRulesModel(securityGroup);
+            $scope.securityGroupRules = buildSecurityGroupRulesModel(
+              securityGroup
+            );
+          }
+        }, fourOhFour);
     }
 
     function buildIpRulesModel(details) {
-      let groupedRangeRules = _.groupBy(details.ipRangeRules, (rule => rule.range.ip + rule.range.cidr));
+      let groupedRangeRules = _.groupBy(
+        details.ipRangeRules,
+        rule => rule.range.ip + rule.range.cidr
+      );
       return Object.keys(groupedRangeRules)
         .map(addr => {
           return {
             address: addr,
-            rules: buildRuleModel(groupedRangeRules, addr),
+            rules: buildRuleModel(groupedRangeRules, addr)
           };
         })
         .filter(rule => rule.rules.length);
     }
 
     function buildSecurityGroupRulesModel(details) {
-      let groupedRangeRules = _.groupBy(details.securityGroupRules, (rule => rule.securityGroup.id));
+      let groupedRangeRules = _.groupBy(
+        details.securityGroupRules,
+        rule => rule.securityGroup.id
+      );
       return Object.keys(groupedRangeRules)
         .map(addr => {
           return {
             securityGroup: groupedRangeRules[addr][0].securityGroup,
-            rules: buildRuleModel(groupedRangeRules, addr),
+            rules: buildRuleModel(groupedRangeRules, addr)
           };
         })
         .filter(rule => rule.rules.length);
@@ -84,7 +122,11 @@ module.exports = angular.module('spinnaker.amazon.securityGroup.details.controll
       groupedRangeRules[addr].forEach(rule => {
         (rule.portRanges || []).forEach(range => {
           if (range.startPort !== undefined && range.endPort !== undefined) {
-            rules.push({startPort: range.startPort, endPort: range.endPort, protocol: rule.protocol});
+            rules.push({
+              startPort: range.startPort,
+              endPort: range.endPort,
+              protocol: rule.protocol
+            });
           }
         });
       });
@@ -99,10 +141,10 @@ module.exports = angular.module('spinnaker.amazon.securityGroup.details.controll
         $scope.group = securityGroup.name;
         $scope.state.notFound = true;
         $scope.state.loading = false;
-        recentHistoryService.removeLastItem('securityGroups');
+        recentHistoryService.removeLastItem("securityGroups");
       } else {
         $state.params.allowModalToStayOpen = true;
-        $state.go('^', null, {location: 'replace'});
+        $state.go("^", null, { location: "replace" });
       }
     }
 
@@ -116,33 +158,36 @@ module.exports = angular.module('spinnaker.amazon.securityGroup.details.controll
 
     this.editInboundRules = function editInboundRules() {
       $uibModal.open({
-        templateUrl: require('../configure/editSecurityGroup.html'),
-        controller: 'awsEditSecurityGroupCtrl as ctrl',
-        size: 'lg',
+        templateUrl: require("../configure/editSecurityGroup.html"),
+        controller: "awsEditSecurityGroupCtrl as ctrl",
+        size: "lg",
         resolve: {
           securityGroup: function() {
             return angular.copy($scope.securityGroup);
           },
-          application: function() { return application; }
+          application: function() {
+            return application;
+          }
         }
       });
     };
 
-
     this.cloneSecurityGroup = function cloneSecurityGroup() {
       $uibModal.open({
-        templateUrl: require('../clone/cloneSecurityGroup.html'),
-        controller: 'awsCloneSecurityGroupController as ctrl',
-        size: 'lg',
+        templateUrl: require("../clone/cloneSecurityGroup.html"),
+        controller: "awsCloneSecurityGroupController as ctrl",
+        size: "lg",
         resolve: {
           securityGroup: function() {
             var securityGroup = angular.copy($scope.securityGroup);
-            if(securityGroup.region) {
+            if (securityGroup.region) {
               securityGroup.regions = [securityGroup.region];
             }
             return securityGroup;
           },
-          application: function() { return application; }
+          application: function() {
+            return application;
+          }
         }
       });
     };
@@ -153,28 +198,43 @@ module.exports = angular.module('spinnaker.amazon.securityGroup.details.controll
 
       const taskMonitor = {
         application: application,
-        title: 'Deleting ' + securityGroup.name,
-        onTaskRetry: () => { isRetry = true; },
+        title: "Deleting " + securityGroup.name,
+        onTaskRetry: () => {
+          isRetry = true;
+        }
       };
 
       const submitMethod = () => {
         const params = {
           cloudProvider: securityGroup.provider,
-          vpcId: securityGroup.vpcId,
+          vpcId: securityGroup.vpcId
         };
-        if (isRetry) { Object.assign(params, retryParams); }
-        return securityGroupWriter.deleteSecurityGroup(securityGroup, application, params);
+        if (isRetry) {
+          Object.assign(params, retryParams);
+        }
+        return securityGroupWriter.deleteSecurityGroup(
+          securityGroup,
+          application,
+          params
+        );
       };
 
       confirmationModalService.confirm({
-        header: 'Really delete ' + securityGroup.name + '?',
-        buttonText: 'Delete ' + securityGroup.name,
-        provider: 'aws',
+        header: "Really delete " + securityGroup.name + "?",
+        buttonText: "Delete " + securityGroup.name,
+        provider: "aws",
         account: securityGroup.accountId,
         applicationName: application.name,
         taskMonitorConfig: taskMonitor,
         submitMethod: submitMethod,
-        retryBody: '<div><p>Retry deleting the security group and revoke any dependent ingress rules?</p><p>Any instance or load balancer associations will have to removed manually.</p></div>'
+        retryBody: `<div>
+            <p>
+              Retry deleting the security group and revoke any dependent ingress rules?
+            </p>
+            <p>
+              Any instance or load balancer associations will have to removed manually.
+            </p>
+          </div>`
       });
     };
 
@@ -184,5 +244,4 @@ module.exports = angular.module('spinnaker.amazon.securityGroup.details.controll
         refresh: extractSecurityGroup
       };
     }
-  }
-);
+  });

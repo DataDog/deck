@@ -8,14 +8,12 @@
         <label class="checkbox">Show </label>
         <div class="checkbox">
           <label>
-            <input type="checkbox" ng-model="sortFilter.showServerGroups" ng-change="ctrl.updateSecurityGroups()" />
-            Server Groups
+            <input type="checkbox" ng-model="sortFilter.showServerGroups" ng-change="ctrl.updateSecurityGroups()" /> Server Groups
           </label>
         </div>
         <div class="checkbox">
           <label>
-            <input type="checkbox" ng-model="sortFilter.showLoadBalancers" ng-change="ctrl.updateSecurityGroups()"/>
-            Load Balancers
+            <input type="checkbox" ng-model="sortFilter.showLoadBalancers" ng-change="ctrl.updateSecurityGroups()" /> Load Balancers
           </label>
         </div>
       </div>
@@ -23,7 +21,7 @@
   </div>
   <div class="col-lg-3 col-md-2">
     <div class="application-actions">
-      <button class="btn btn-sm btn-default" ng-click="ctrl.createSecurityGroup()">
+      <button ng-if="!securityGroupFlags.readOnly" class="btn btn-sm btn-default" ng-click="ctrl.createSecurityGroup()">
         <span class="glyphicon glyphicon-plus-sign visible-lg-inline"></span>
         <span class="glyphicon glyphicon-plus-sign visible-md-inline visible-sm-inline" uib-tooltip="Create Security Group"></span>
         <span class="visible-lg-inline">Create Security Group</span>
@@ -32,7 +30,4 @@
   </div>
   <filter-tags tags="tags" tag-cleared="ctrl.updateSecurityGroups" clear-filters="ctrl.clearFilters"></filter-tags>
 </div>
-<div class="content"
-     data-scroll-id="securitygroups-content"
-     sticky-headers
-     ng-include="ctrl.groupingsTemplate"></div>
+<div class="content" data-scroll-id="securitygroups-content" sticky-headers ng-include="ctrl.groupingsTemplate"></div>
