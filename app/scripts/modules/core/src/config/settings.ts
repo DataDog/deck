@@ -42,10 +42,18 @@ export interface IFeatures {
   [key: string]: any;
 }
 
+/**
+ * Provides flags for controlling Security Groups UI
+ */
+export interface ISecurityGroupsSettings {
+  readOnly: boolean;
+  disableCrossAccountRules: boolean;
+}
+
 export interface ISpinnakerSettings {
   [key: string]: any;
 
-  analytics: { ga?: string; };
+  analytics: { ga?: string };
   authEnabled: boolean;
   authEndpoint: string;
   authTtl: number;
@@ -66,9 +74,9 @@ export interface ISpinnakerSettings {
   };
   executionWindow?: {
     atlas?: {
-      regions: { label: string, baseUrl: string }[];
+      regions: { label: string; baseUrl: string }[];
       url: string;
-    }
+    };
   };
   feature: IFeatures;
   gateUrl: string;
@@ -82,6 +90,7 @@ export interface ISpinnakerSettings {
   resetProvider: (provider: string) => () => void;
   resetToOriginal: () => void;
   searchVersion: 1 | 2;
+  securityGroups: ISecurityGroupsSettings;
   triggerTypes: string[];
 }
 

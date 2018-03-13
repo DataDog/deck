@@ -2,13 +2,17 @@
 
 var feedbackUrl = process.env.FEEDBACK_URL;
 var gateHost = process.env.API_HOST || 'http://localhost:8084';
-var bakeryDetailUrl = process.env.BAKERY_DETAIL_URL || (gateHost + '/bakery/logs/{{context.region}}/{{context.status.resourceId}}');
-var authEndpoint = process.env.AUTH_ENDPOINT || (gateHost + '/auth/user');
+var bakeryDetailUrl =
+  process.env.BAKERY_DETAIL_URL ||
+  gateHost + '/bakery/logs/{{context.region}}/{{context.status.resourceId}}';
+var authEndpoint = process.env.AUTH_ENDPOINT || gateHost + '/auth/user';
 var authEnabled = process.env.AUTH_ENABLED === 'false' ? false : true;
 var netflixMode = process.env.NETFLIX_MODE === 'true' ? true : false;
-var chaosEnabled = netflixMode || process.env.CHAOS_ENABLED === 'true' ? true : false;
+var chaosEnabled =
+  netflixMode || process.env.CHAOS_ENABLED === 'true' ? true : false;
 var fiatEnabled = process.env.FIAT_ENABLED === 'true' ? true : false;
-var entityTagsEnabled = process.env.ENTITY_TAGS_ENABLED === 'true' ? true : false;
+var entityTagsEnabled =
+  process.env.ENTITY_TAGS_ENABLED === 'true' ? true : false;
 var debugEnabled = process.env.DEBUG_ENABLED === 'false' ? false : true;
 var canaryEnabled = process.env.CANARY_ENABLED === 'true';
 var infrastructureEnabled = process.env.INFRA_ENABLED === 'true' ? true : false;
@@ -17,7 +21,17 @@ var dryRunEnabled = process.env.DRYRUN_ENABLED === 'true' ? true : false;
 window.spinnakerSettings = {
   checkForUpdates: true,
   debugEnabled: debugEnabled,
-  defaultProviders: ['aws', 'gce', 'azure', 'cf', 'kubernetes', 'dcos', 'openstack', 'oraclebmcs', 'ecs'],
+  defaultProviders: [
+    'aws',
+    'gce',
+    'azure',
+    'cf',
+    'kubernetes',
+    'dcos',
+    'openstack',
+    'oraclebmcs',
+    'ecs'
+  ],
   feedbackUrl: feedbackUrl,
   gateUrl: gateHost,
   bakeryDetailUrl: bakeryDetailUrl,
@@ -26,49 +40,53 @@ window.spinnakerSettings = {
   defaultTimeZone: process.env.TIMEZONE || 'America/Los_Angeles', // see http://momentjs.com/timezone/docs/#/data-utilities/
   defaultCategory: 'serverGroup',
   defaultInstancePort: 80,
+  securityGroups: {
+    readOnly: false,
+    disableCrossAccountRules: false
+  },
   providers: {
     azure: {
       defaults: {
         account: 'azure-test',
         region: 'westus'
-      },
+      }
     },
     aws: {
       defaults: {
         account: 'test',
         region: 'us-east-1',
-        iamRole: 'BaseIAMRole',
+        iamRole: 'BaseIAMRole'
       },
       defaultSecurityGroups: [],
       loadBalancers: {
         // if true, VPC load balancers will be created as internal load balancers if the selected subnet has a purpose
         // tag that starts with "internal"
-        inferInternalFlagFromSubnet: false,
+        inferInternalFlagFromSubnet: false
       },
-      useAmiBlockDeviceMappings: false,
+      useAmiBlockDeviceMappings: false
     },
     ecs: {
       defaults: {
         account: 'test',
         region: 'us-east-1',
-        iamRole: 'BaseIAMRole',
+        iamRole: 'BaseIAMRole'
       },
-      defaultSecurityGroups: [],
+      defaultSecurityGroups: []
     },
     gce: {
       defaults: {
         account: 'my-google-account',
         region: 'us-central1',
-        zone: 'us-central1-f',
+        zone: 'us-central1-f'
       },
-      associatePublicIpAddress: true,
+      associatePublicIpAddress: true
     },
     titus: {
       defaults: {
         account: 'titustestvpc',
         region: 'us-east-1',
-        iamProfile: '{{application}}InstanceProfile',
-      },
+        iamProfile: '{{application}}InstanceProfile'
+      }
     },
     oraclebmcs: {
       defaults: {
@@ -81,7 +99,7 @@ window.spinnakerSettings = {
       defaults: {
         account: 'test',
         region: 'us-west-1'
-      },
+      }
     },
     kubernetes: {
       defaults: {
@@ -89,36 +107,38 @@ window.spinnakerSettings = {
         namespace: 'default',
         proxy: 'localhost:8001',
         internalDNSNameTemplate: '{{name}}.{{namespace}}.svc.cluster.local',
-        instanceLinkTemplate: '{{host}}/api/v1/proxy/namespaces/{{namespace}}/pods/{{name}}',
-        apiPrefix: 'api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard/#',
-      },
+        instanceLinkTemplate:
+          '{{host}}/api/v1/proxy/namespaces/{{namespace}}/pods/{{name}}',
+        apiPrefix:
+          'api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard/#'
+      }
     },
     dcos: {
       defaults: {
         account: 'my-dcos-account'
-      },
+      }
     },
     appengine: {
       defaults: {
         account: 'my-appengine-account',
-        containerImageUrlDeployments: false,
-      },
+        containerImageUrlDeployments: false
+      }
     }
   },
   whatsNew: {
     gistId: '32526cd608db3d811b38',
-    fileName: 'news.md',
+    fileName: 'news.md'
   },
   notifications: {
     email: {
-      enabled: true,
+      enabled: true
     },
     hipchat: {
       enabled: true,
       botName: 'Skynet T-800'
     },
     sms: {
-      enabled: true,
+      enabled: true
     },
     slack: {
       enabled: true,
@@ -129,7 +149,15 @@ window.spinnakerSettings = {
   authTtl: 600000,
   gitSources: ['stash', 'github', 'bitbucket'],
   pubsubProviders: ['google', 'kafka'],
-  triggerTypes: ['git', 'pipeline', 'docker', 'cron', 'jenkins', 'travis', 'pubsub'],
+  triggerTypes: [
+    'git',
+    'pipeline',
+    'docker',
+    'cron',
+    'jenkins',
+    'travis',
+    'pubsub'
+  ],
   searchVersion: 1,
   feature: {
     artifacts: false,
@@ -151,6 +179,6 @@ window.spinnakerSettings = {
     snapshots: false,
     travis: false,
     versionedProviders: true,
-    vpcMigrator: true,
-  },
+    vpcMigrator: true
+  }
 };
