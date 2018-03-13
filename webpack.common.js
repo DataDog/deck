@@ -5,6 +5,7 @@ const md5 = require('md5');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 // invalidate webpack cache when webpack config is changed or cache-loader is updated,
 const CACHE_INVALIDATE = JSON.stringify({
@@ -127,6 +128,10 @@ function configure(IS_TEST) {
             { loader: 'expose-loader?jQuery' },
           ],
         },
+        {
+          test: /ui-sortable/,
+          use: ['imports-loader?$UI=jquery-ui/ui/widgets/sortable']
+        }
       ],
     },
     watch: IS_TEST,
@@ -140,7 +145,6 @@ function configure(IS_TEST) {
       stats: 'errors-only',
     },
     externals: {
-      'cheerio': 'window',
       'react/addons': 'react',
       'react/lib/ExecutionEnvironment': 'react',
       'react/lib/ReactContext': 'react',
@@ -157,13 +161,18 @@ function configure(IS_TEST) {
 
   config.plugins = [
     new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true, tslint: true }),
+    new CopyWebpackPlugin([
+      {
+        from: `${NODE_MODULE_PATH}/@spinnaker/styleguide/public/styleguide.html`,
+        to: `./styleguide.html`,
+      }
+    ]),
   ];
 
   if (!IS_TEST) {
     config.entry = {
       settings: SETTINGS_PATH,
       'settings-local': './settings-local.js',
-      halconfig: './halconfig/settings.js',
       app: './app/scripts/app.ts',
       vendor: [
         'jquery', 'angular', 'angular-ui-bootstrap', 'source-sans-pro',
@@ -191,7 +200,7 @@ function configure(IS_TEST) {
         // settings.js is put at the end of the <script> blocks
         // which breaks the booting of the app.
         chunksSortMode: (a, b) => {
-          const chunks = ['init', 'vendor', 'halconfig', 'settings', 'settings-local', 'app'];
+          const chunks = ['init', 'vendor', 'settings', 'settings-local', 'app'];
           return chunks.indexOf(a.names[0]) - chunks.indexOf(b.names[0]);
         }
       })

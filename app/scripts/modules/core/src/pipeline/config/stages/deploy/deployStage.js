@@ -1,5 +1,6 @@
 'use strict';
 
+import {CLUSTER_SERVICE} from 'core/cluster/cluster.service';
 import {CLOUD_PROVIDER_REGISTRY} from 'core/cloudProvider/cloudProvider.registry';
 import {SERVER_GROUP_COMMAND_BUILDER_SERVICE} from 'core/serverGroup/configure/common/serverGroupCommandBuilder.service';
 import {StageConstants} from 'core/pipeline/config/stages/stageConstants';
@@ -9,8 +10,9 @@ const angular = require('angular');
 module.exports = angular.module('spinnaker.core.pipeline.stage.deployStage', [
   CLOUD_PROVIDER_REGISTRY,
   SERVER_GROUP_COMMAND_BUILDER_SERVICE,
+  CLUSTER_SERVICE,
 ])
-  .config(function (pipelineConfigProvider, cloudProviderRegistryProvider) {
+  .config(function (pipelineConfigProvider, cloudProviderRegistryProvider, clusterServiceProvider) {
     pipelineConfigProvider.registerStage({
       label: 'Deploy',
       description: 'Deploys the previously baked or found image',
@@ -27,14 +29,10 @@ module.exports = angular.module('spinnaker.core.pipeline.stage.deployStage', [
           type: 'stageBeforeType',
           stageTypes: ['bake', 'findAmi', 'findImage', 'findImageFromTags'],
           message: 'You must have a Bake or Find Image stage before any deploy stage.',
-          skipValidation: (pipeline, stage) => {
-            if (!stage.clusters || !stage.clusters.length) {
-              return true;
-            }
-            return stage.clusters.every(cluster =>
-              cloudProviderRegistryProvider.$get().getValue(cluster.provider, 'serverGroup.skipUpstreamStageCheck')
-            );
-          }
+          skipValidation: (pipeline, stage) => (stage.clusters || []).every(cluster =>
+            cloudProviderRegistryProvider.$get().getValue(cluster.provider, 'serverGroup.skipUpstreamStageCheck')
+            || clusterServiceProvider.$get().isDeployingArtifact(cluster)
+          )
         },
       ],
       accountExtractor: (stage) => (stage.context.clusters || []).map(c => c.account),
@@ -96,7 +94,7 @@ module.exports = angular.module('spinnaker.core.pipeline.stage.deployStage', [
     };
 
     this.addCluster = function() {
-      providerSelectionService.selectProvider($scope.application, 'serverGroup').then(function(selectedProvider) {
+      providerSelectionService.selectProvider($scope.application, 'serverGroup', providerFilterFn).then(function(selectedProvider) {
         let config = cloudProviderRegistry.getValue(selectedProvider, 'serverGroup');
         $uibModal.open({
           templateUrl: config.cloneServerGroupTemplateUrl,
@@ -182,6 +180,13 @@ module.exports = angular.module('spinnaker.core.pipeline.stage.deployStage', [
 
     if ($scope.pipeline.strategy) {
       $scope.stage.trafficOptions = $scope.stage.trafficOptions || $scope.trafficOptions[0].val;
+    }
+
+    function providerFilterFn(application, account, provider) {
+      return (
+        !provider.unsupportedStageTypes
+        || provider.unsupportedStageTypes.indexOf('deploy') === -1
+      );
     }
 
   });

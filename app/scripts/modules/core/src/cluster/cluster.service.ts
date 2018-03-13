@@ -3,7 +3,7 @@ import { forOwn, get, groupBy, has, head, keys, values } from 'lodash';
 
 import { Api, API_SERVICE } from '../api/api.service';
 import { NAMING_SERVICE, NamingService } from 'core/naming/naming.service';
-import { taskMatches } from './task.matcher';
+import { taskMatcher } from './task.matcher';
 import { IServerGroup } from 'core/domain';
 import { Application } from 'core/application/application.model';
 import { ICluster, IClusterSummary } from '../domain/ICluster';
@@ -12,6 +12,8 @@ import { IExecution } from '../domain/IExecution';
 import { CLUSTER_FILTER_MODEL, ClusterFilterModel } from './filter/clusterFilter.model';
 
 export class ClusterService {
+
+  public static ON_DEMAND_THRESHOLD = 350;
 
   constructor(private $q: IQService,
               private API: Api,
@@ -26,7 +28,7 @@ export class ClusterService {
     return this.getClusters(application.name).then((clusters: IClusterSummary[]) => {
       const dataSource = application.getDataSource('serverGroups');
       const serverGroupLoader = this.API.one('applications').one(application.name).all('serverGroups');
-      dataSource.fetchOnDemand = clusters.length > 250;
+      dataSource.fetchOnDemand = clusters.length > ClusterService.ON_DEMAND_THRESHOLD;
       if (dataSource.fetchOnDemand) {
         dataSource.clusters = clusters;
         serverGroupLoader.withParams({
@@ -167,11 +169,15 @@ export class ClusterService {
         serverGroup.runningTasks.length = 0;
       }
       runningTasks.forEach(function(task) {
-        if (taskMatches(task, serverGroup)) {
+        if (taskMatcher.taskMatches(task, serverGroup)) {
           serverGroup.runningTasks.push(task);
         }
       });
     });
+  }
+
+  public isDeployingArtifact(cluster: ICluster): boolean {
+    return cluster.imageSource === 'artifact';
   }
 
   private getClusters(application: string): IPromise<IClusterSummary[]> {

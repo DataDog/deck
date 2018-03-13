@@ -32,6 +32,7 @@ export class DeployInitializerController implements IController {
 
   public application: Application;
   public command: any;
+  public dismiss: () => void;
   public onTemplateSelected: () => void;
   public selectedTemplate: IDeployTemplate;
   public cloudProvider: string;
@@ -77,7 +78,9 @@ export class DeployInitializerController implements IController {
     const { viewState } = command;
     const baseCommand = this.command;
     viewState.disableImageSelection = true;
+    viewState.showImageSourceSelector = true;
     viewState.disableStrategySelection = baseCommand.viewState.disableStrategySelection || false;
+    viewState.expectedArtifacts = baseCommand.viewState.expectedArtifacts || [];
     viewState.imageId = null;
     viewState.readOnlyFields = baseCommand.viewState.readOnlyFields || {};
     viewState.submitButtonLabel = 'Add';
@@ -119,6 +122,7 @@ const component: IComponentOptions = {
     application: '<',
     cloudProvider: '@',
     command: '<',
+    dismiss: '&',
     onTemplateSelected: '&',
     parentState: '<',
     templateSelectionText: '<',

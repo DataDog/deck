@@ -55,6 +55,7 @@ module(HELP_CONTENTS, [])
           <li>Trigger</li>
           <li>Context - server groups, bakery results, etc.</li>
         </ul>`,
+    'pipeline.config.expectedArtifact': 'Artifacts required for trigger to execute.  Only one of the artifacts need to be present for the trigger to execute',
     'pipeline.config.artifact.help': `
         <p>There are certain types of triggers (e.g. Pub/Sub triggers) that can produce artifacts and inject them into the execution context for a pipeline.</p>
         <p>You can specify artifacts that your pipeline expects to be present in the execution context in this section.</p>`,
@@ -86,25 +87,46 @@ module(HELP_CONTENTS, [])
         <p>If you want to start from scratch, select "None".</p>
         <p>You can always edit the cluster configuration after you've created it.</p>`,
     'pipeline.config.expectedArtifact.matchArtifact': `
-        <p>This specifies which fields in your incoming artifact to match against. Every field that you supply will be used to match against all incoming artifacts. If all fields specified match, the incoming artifact is bound to your pipeline context.</p>
+        <p>
+          This specifies which fields in your incoming artifact to match against. Every field that
+          you supply will be used to match against all incoming artifacts. If all specified fields
+          match, the incoming artifact is bound to your pipeline context.
+        </p>
+        <p>
+          The field comparisons are done against the incoming artifact.  Example: if you are parsing
+          artifacts from pub/sub messages via a Jinja template, the comparison will be done after
+          the pub/sub -> Spinnaker artifact translation.
+        </p>
         <p>For example, if you want to match against any GCS object, only supply <b>type</b> = gcs/object. If you also want to restrict the matches by other fields, include those as well.</p>
-        <p>Regex is accepted, so you could for example match on a filepath like so <b>name</b> = .*\\.yaml to match all incoming YAML files.</p>`,
+        <p>Regex is accepted, so you could for example match on a filepath like so <b>name</b> = .*\\.yaml to match all incoming YAML files.</p>
+        <p>See the <a href="https://www.spinnaker.io/reference/artifacts/">reference</a> for more information.</p>`,
     'pipeline.config.expectedArtifact.ifMissing': `
         <p>If no artifact was supplied by your trigger to match against this expected artifact, you have a few options:
           <ol>
             <li>Attempt to match against an artifact in the prior pipeline execution's context. This ensures that you will always be using the most recently supplied artifact to this pipeline, and is generally a safe choice.</li>
-            <li>If option 1 fails, or isn't specified, you can provide a default artifact with all required fields specified to use instead.</li>
+            <li>If option 1 fails, or isn't specified, you can provide a default artifact with the required fields to use instead.</li>
             <li>Fail the pipeline if options 1 or 2 fail or aren't selected.</li>
           </ol>
-        </p>`,
+        </p>
+        <p>See the <a href="https://www.spinnaker.io/reference/artifacts/in-pipelines">reference</a> for more information.</p>`,
     'pipeline.config.expectedArtifact.defaultArtifact': `
-        <p>If your artifact either wasn't supplied from a trigger, or it wasn't found in a prior execution, the artifact specified below will end up in your pipeline's execution context.</p>`,
+        <p>If your artifact either wasn't supplied from a trigger, or it wasn't found in a prior execution, the artifact specified below will end up in your pipeline's execution context.</p>
+        <p>See the <a href="https://www.spinnaker.io/reference/artifacts/in-pipelines">reference</a> for more information.</p>`,
     'pipeline.config.expectedArtifact.gcs.name': `
-        <p>The GCS object name, in the form 'gs://bucket/path/to/file.yml'.</p>`,
+        <p>The GCS object name, in the form <code>gs://bucket/path/to/file.yml</code>.</p>`,
+    'pipeline.config.expectedArtifact.defaultGcs.reference': `
+        <p>The GCS object name, <i>optionally</i> appending the version. An example: <code>gs://bucket/file.yml#123948581</code></p>`,
     'pipeline.config.expectedArtifact.docker.name': `
-        <p>The Docker image name you want to trigger on changes to. If you are treating a tag as a release stream, you should include the image tag in the name. An example is 'gcr.io/project/image:stable', where all changes to the 'stable' tag will result in triggering this pipeline.</p>`,
+        <p>The Docker image name you want to trigger on changes to. By default, this does <i>not</i> include the image tag or digest, only the registry and image repository.</p>`,
+    'pipeline.config.expectedArtifact.defaultDocker.reference': `
+        <p>The fully-qualified docker image to deploy. An example: <code>gcr.io/project/image@sha256:59bb771c86</code></p>`,
     'pipeline.config.expectedArtifact.git.name': `
         <p>The file's path from the git root, in the form 'path/to/file.json'</p>`,
+    'pipeline.config.expectedArtifact.defaultGithub.version': `
+        <p>Either the commit or branch to checkout.</p>`,
+    'pipeline.config.expectedArtifact.defaultGithub.reference': `
+        <p>The GitHub API content url the artifact lives under. The domain name may change if you're running GHE.</p>
+        <p>An example is <code>https://api.github.com/repos/$ORG/$REPO/contents/$FILEPATH</code>. See <a href="https://www.spinnaker.io/reference/artifacts/types/github-file/#fields">our docs</a> for more info.</p>`,
     'pipeline.config.trigger.webhook.source': `
         <p>Determines the target URL required to trigger this pipeline, as well as how the payload can be transformed into artifacts.</p>
     `,
@@ -118,7 +140,16 @@ module(HELP_CONTENTS, [])
         <p>The constraint values may be supplied as regex.</p>
     `,
     'pipeline.config.trigger.pubsub.payloadConstraints': `
-        <p>When provided, only a pubsub message with a payload containing at least the specified key/value pairs will be allowed to trigger this pipeline. For example, if you wanted to lockdown the systems/users that can trigger this pipeline via this pubsub subscription, you could require the key "secret" and value "something-secret" as a constraint.</p>
+        <p>
+          When provided, only a pubsub message with a payload containing at least the specified
+          key/value pairs will be allowed to trigger this pipeline. For example, if you wanted
+          to restrict the systems/users that can trigger this pipeline via this pubsub
+          subscription, you could require the key "secret" and value "something-secret" as a constraint.
+        </p>
+        <p>
+          The key/value pairs are matched against the unprocessed payload body, prior to any
+          transformation using, for example, a Jinja template in a pubsub subscription configuration.
+        </p>
         <p>The constraint values may be supplied as regex.</p>
     `,
     'pipeline.config.findArtifactFromExecution.considerExecutions': `
@@ -196,7 +227,7 @@ module(HELP_CONTENTS, [])
     'pipeline.config.findAmi.cluster': 'The cluster to look at when selecting the image to use in this pipeline.',
     'pipeline.config.findAmi.imageNamePattern': 'A regex used to match the name of the image. Must result in exactly one match to succeed. Empty is treated as match any.',
     'pipeline.config.dependsOn': 'Declares which stages must be run <em>before</em> this stage begins.',
-    'pipeline.config.parallel.cancel.queue': '<p>If concurrent pipeline execution is disabled, then the pipelines that are in the waiting queue will get canceled by default. <br><br>Check this box if you want to keep them in the queue.</p>',
+    'pipeline.config.parallel.cancel.queue': '<p>If concurrent pipeline execution is disabled, then the pipelines that are in the waiting queue will get canceled when the next execution starts. <br><br>Check this box if you want to keep them in the queue.</p>',
     'pipeline.config.timeout': `
         <p>Allows you to override the amount of time the stage can run before failing.</p>
         <p><b>Note:</b> this represents the overall time the stage has to complete (the sum of all the task times).</p>`,
@@ -234,6 +265,7 @@ module(HELP_CONTENTS, [])
         <ul><li><b>Oldest</b> will terminate the oldest instances first</li>
         <li><b>Newest</b> will terminate those most recently launched.</li></ul></p>`,
     'strategy.rollingRedBlack.targetPercentages': '<p>Rolling red black will slowly scale up the new server group. It will resize the new server group by each percentage defined.</p>',
+    'strategy.rollingRedBlack.rollback': '<p>Disable the new server group and ensure that the previous server group is restored to its original capacity.</p>',
     'loadBalancers.filter.serverGroups': `
         <p>Displays all server groups configured to use the load balancer.</p>
         <p>If the server group is configured to <em>not</em> add new instances to the load balancer, it will be grayed out.</p>`,
@@ -255,6 +287,9 @@ module(HELP_CONTENTS, [])
         <p>By default, the bakery will <b>not</b> create a new image if the contents of the package have not changed;
           instead, it will return the previously baked image.</p>
         <p>Select this option to force the bakery to create a new image, regardless of whether or not the selected package exists.</p>`,
+    'execution.dryRun': `
+        <p>Select this option to run the pipeline without <em>really</em> executing anything.</p>
+        <p>This is a good way to test parameter-driven behavior, expressions, optional stages, etc.</p>`,
     'user.verification': `
         Typing into this verification field is annoying! But it serves as a reminder that you are
         changing something in an account deemed important, and prevents you from accidentally changing something
@@ -276,4 +311,7 @@ module(HELP_CONTENTS, [])
     'pipeline.config.webhook.canceledStatuses': 'Comma-separated list of strings that will be considered as CANCELED status.',
     'pipeline.config.webhook.terminalStatuses': 'Comma-separated list of strings that will be considered as TERMINAL status.',
     'pipeline.config.webhook.customHeaders': 'Key-value pairs to be sent as additional headers to the service.',
+    'pipeline.config.parameter.label': '(Optional): a label to display when users are triggering the pipeline manually',
+    'pipeline.config.parameter.description': `(Optional): if supplied, will be displayed to users as a tooltip
+        when triggering the pipeline manually. You can include HTML in this field.`,
   });

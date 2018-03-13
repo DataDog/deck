@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import * as Select from 'react-select';
+import Select, { Option } from 'react-select';
 import { BindAll } from 'lodash-decorators';
 import { $log } from 'ngimport';
 import { IHttpPromiseCallbackArg } from 'angular';
@@ -10,12 +10,13 @@ import { Debounce } from 'lodash-decorators';
 import { Application } from 'core/application/application.model';
 import { IPipeline } from 'core/domain/IPipeline';
 import { SubmitButton } from 'core/modal/buttons/SubmitButton';
-import { ReactInjector, NgReact } from 'core/reactShims';
+import { ReactInjector } from 'core/reactShims';
 import { SETTINGS } from 'core/config/settings';
 import { IPipelineTemplateConfig, IPipelineTemplate } from 'core/pipeline/config/templates/pipelineTemplate.service';
 
 import { TemplateDescription } from './TemplateDescription';
 import { ManagedTemplateSelector } from './ManagedTemplateSelector';
+import { Spinner } from 'core/widgets/spinners/Spinner'
 
 import './createPipelineModal.less';
 
@@ -29,7 +30,7 @@ export interface ICreatePipelineModalState {
   command: ICreatePipelineCommand;
   existingNames: string[];
   configs: Partial<IPipeline>[];
-  configOptions: Select.Option[];
+  configOptions: Option[];
   templates: IPipelineTemplate[]
   useTemplate: boolean;
   useManagedTemplate: boolean;
@@ -81,7 +82,7 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
     const defaultConfig = this.getDefaultConfig();
     const { application } = this.props;
     const configs: Partial<IPipeline>[] = [defaultConfig].concat(get(application, 'pipelineConfigs.data', []));
-    const configOptions: Select.Option[] = configs.map(config => ({ value: config.name, label: config.name }));
+    const configOptions: Option[] = configs.map(config => ({ value: config.name, label: config.name }));
     const existingNames: string[] = [defaultConfig]
       .concat(get(application, 'pipelineConfigs.data', []))
       .concat(get(application, 'strategyConfigs.data', []))
@@ -153,7 +154,7 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
 
   private onSaveSuccess(config: Partial<IPipeline>): void {
     const application = this.props.application;
-    application.getDataSource('pipelineConfigs').refresh().then(() => {
+    application.getDataSource('pipelineConfigs').refresh(true).then(() => {
       const newPipeline = (config.strategy ?
                           (application.strategyConfigs.data as IPipeline[]) :
                            application.getDataSource('pipelineConfigs').data).find(_config => _config.name === config.name);
@@ -186,7 +187,7 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
     this.props.showCallback(false);
   }
 
-  private handleTypeChange(option: Select.Option): void {
+  private handleTypeChange(option: Option): void {
     this.setState({ command: Object.assign({}, this.state.command, { strategy: option.value }) });
   }
 
@@ -194,7 +195,7 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
     this.setState({ command: Object.assign({}, this.state.command, { name: e.target.value }) });
   }
 
-  private handleConfigChange(option: Select.Option): void {
+  private handleConfigChange(option: Option): void {
     const config = this.state.configs.find(t => t.name === option.value);
     this.setState({ command: Object.assign({}, this.state.command, { config }) });
   }
@@ -232,7 +233,7 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
     this.loadPipelineTemplateFromSource(templateSourceUrl);
   }
 
-  private configOptionRenderer(option: Select.Option) {
+  private configOptionRenderer(option: Option) {
     const config = this.state.configs.find(t => t.name === option.value);
     return (
       <div>
@@ -292,7 +293,6 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
   }
 
   public render() {
-    const { LegacySpinner } = NgReact;
     const nameHasError: boolean = !this.validateNameCharacters();
     const nameIsNotUnique: boolean = !this.validateNameIsUnique();
     const formValid = !nameHasError &&
@@ -306,7 +306,7 @@ export class CreatePipelineModal extends React.Component<ICreatePipelineModalPro
           <Modal.Title>Create New {this.state.command.strategy ? 'Strategy' : 'Pipeline'}</Modal.Title>
         </Modal.Header>
         {this.state.loading && (
-          <Modal.Body style={{ height: '200px' }}><LegacySpinner radius={25} width={6} length={16} /></Modal.Body>
+          <Modal.Body style={{ height: '200px' }}><Spinner size="medium" /></Modal.Body>
         )}
         {!this.state.loading && (
           <Modal.Body>

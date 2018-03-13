@@ -1,4 +1,5 @@
 import { IPromise } from 'angular';
+import { CreatePipelineButton } from 'core/pipeline/create/CreatePipelineButton';
 import * as React from 'react';
 import * as ReactGA from 'react-ga';
 import { Transition } from '@uirouter/core';
@@ -15,7 +16,7 @@ import { Tooltip } from 'core/presentation/Tooltip';
 import { CreatePipeline } from 'core/pipeline/config/CreatePipeline';
 import { ExecutionFilters } from 'core/pipeline/filter/ExecutionFilters';
 import { ExecutionGroups } from './executionGroup/ExecutionGroups';
-import { FilterTags } from 'core/filterModel';
+import { FilterTags, IFilterTag, ISortFilter } from 'core/filterModel';
 import { Spinner } from 'core/widgets/spinners/Spinner';
 
 import './executions.less';
@@ -28,8 +29,8 @@ export interface IExecutionsState {
   initializationError?: boolean;
   filtersExpanded: boolean;
   loading: boolean;
-  sortFilter: any;
-  tags: any[];
+  sortFilter: ISortFilter;
+  tags: IFilterTag[];
   triggeringExecution: boolean;
 }
 
@@ -45,17 +46,7 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
   constructor(props: IExecutionsProps) {
     super(props);
 
-    const { app } = props;
     const { executionFilterModel } = ReactInjector;
-    if (executionFilterModel.mostRecentApplication !== app.name) {
-      executionFilterModel.asFilterModel.groups = [];
-      executionFilterModel.mostRecentApplication = app.name;
-    }
-
-    if (app.notFound) { return; }
-
-    app.setActiveState(app.executions);
-
     this.state = {
       filtersExpanded: this.insightFilterStateModel.filtersExpanded,
       loading: true,
@@ -64,6 +55,18 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
       triggeringExecution: false,
     };
 
+  }
+
+  public componentWillMount(): void {
+    const { app } = this.props;
+    const { executionFilterModel } = ReactInjector;
+    if (executionFilterModel.mostRecentApplication !== app.name) {
+      executionFilterModel.asFilterModel.groups = [];
+      executionFilterModel.mostRecentApplication = app.name;
+    }
+
+    if (app.notFound) { return; }
+    app.setActiveState(app.executions);
     app.executions.activate();
     app.pipelineConfigs.activate();
   }
@@ -137,18 +140,30 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
     );
   };
 
-  private triggerPipeline(): void {
+  private startManualExecutionClicked(): void {
+    this.triggerPipeline();
+  }
+
+  private triggerPipeline(pipeline: IPipeline = null): void {
     ReactGA.event({ category: 'Pipelines', action: 'Trigger Pipeline (top level)' });
     // TODO: Convert the modal to react
     ReactInjector.modalService.open({
       templateUrl: require('../manualExecution/manualPipelineExecution.html'),
       controller: 'ManualPipelineExecutionCtrl as vm',
       resolve: {
-        pipeline: (): IPipeline => null,
+        pipeline: () => pipeline,
+        trigger: () => null as any,
         application: () => this.props.app,
       }
-    }).result.then((command) => this.startPipeline(command)).catch(() => {});
+    }).result
+      .then((command) => this.startPipeline(command))
+      .catch(() => {})
+      .finally(() => this.clearManualExecutionParam());
   };
+
+  private clearManualExecutionParam(): void {
+    ReactInjector.$state.go('.', { startManualExecution: null }, { inherit: true, location: 'replace' });
+  }
 
   private scrollIntoView(delay = 200): void {
     ReactInjector.scrollToService.scrollTo('#execution-' + ReactInjector.$stateParams.executionId, '.all-execution-groups', 225, delay);
@@ -196,6 +211,15 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
       if (ReactInjector.$stateParams.executionId) {
         this.scrollIntoView();
       }
+      const nameOrIdToStart = ReactInjector.$stateParams.startManualExecution;
+      if (nameOrIdToStart) {
+        const toStart = app.pipelineConfigs.data.find((p: IPipeline) => [p.id, p.name].includes(nameOrIdToStart));
+        if (toStart) {
+          this.triggerPipeline(toStart);
+        } else {
+          this.clearManualExecutionParam();
+        }
+      }
     });
   }
 
@@ -228,7 +252,7 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
 
   private showCountChanged(event: React.ChangeEvent<HTMLSelectElement>): void {
     const value = event.target.value;
-    this.state.sortFilter.count = value;
+    this.state.sortFilter.count = parseInt(value, 10);
     ReactGA.event({ category: 'Pipelines', action: 'Change Count', label: value });
     this.updateExecutionGroups(true);
   }
@@ -250,6 +274,14 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
     const hasPipelines = !!(get(app, 'executions.data', []).length || get(app, 'pipelineConfigs.data', []).length);
 
     if (!app.notFound) {
+      if (!hasPipelines && !loading) {
+        return (
+          <div className="text-center full-width">
+            <h3>No pipelines configured for this application.</h3>
+            <h4><CreatePipelineButton application={app} asLink={true}/></h4>
+          </div>
+        );
+      }
       return (
         <div className="executions-section">
           <div className={`insight ${filtersExpanded ? 'filters-expanded' : 'filters-collapsed'}`}>
@@ -279,13 +311,19 @@ export class Executions extends React.Component<IExecutionsProps, IExecutionsSta
                 <div className="form-group pull-right">
                   <a
                     className="btn btn-sm btn-primary clickable"
-                    onClick={this.triggerPipeline}
+                    onClick={this.startManualExecutionClicked}
                     style={{ pointerEvents: triggeringExecution ? 'none' : 'auto' }}
                   >
                     {triggeringExecution && (
-                      <span className="pulsing">
-                        <Tooltip value="Starting Execution"><span className="fa fa-cog fa-spin visible-md-inline visible-sm-inline"/></Tooltip>
-                        <span className="fa fa-cog fa-spin visible-lg-inline"/>
+                      <span>
+                        <Tooltip value="Starting Execution">
+                          <span className="visible-md-inline visible-sm-inline">
+                            <Spinner size="nano" />
+                          </span>
+                        </Tooltip>
+                        <span className="visible-lg-inline">
+                          <Spinner size="nano" />
+                        </span>
                         <span className="visible-xl-inline">Starting Execution</span>&hellip;
                       </span>
                     )}

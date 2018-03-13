@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { BindAll } from 'lodash-decorators';
 
-import { NgReact } from 'core/reactShims';
+import { AccountTag } from 'core/account';
 import { EntityNotifications } from 'core/entityTag/notifications/EntityNotifications';
 import { HealthCounts } from 'core/healthCounts';
 import { IClusterPodTitleProps } from './ClusterPodTitleWrapper';
@@ -10,7 +10,6 @@ import { IClusterPodTitleProps } from './ClusterPodTitleWrapper';
 export class DefaultClusterPodTitle extends React.Component<IClusterPodTitleProps> {
 
   public render(): React.ReactElement<DefaultClusterPodTitle> {
-    const { AccountTag } = NgReact;
     const { grouping, application, parentHeading } = this.props;
 
     return (
@@ -19,7 +18,7 @@ export class DefaultClusterPodTitle extends React.Component<IClusterPodTitleProp
           <AccountTag account={parentHeading} />
         </div>
 
-        <div className="pod-center">
+        <div className="pod-center horizontal space-between center flex-1">
           <div>
             <span className="glyphicon glyphicon-th"/>
             {' ' + grouping.heading}
@@ -33,7 +32,7 @@ export class DefaultClusterPodTitle extends React.Component<IClusterPodTitleProp
             entityType="cluster"
             pageLocation="pod"
             className="inverse"
-            onUpdate={application.serverGroups.refresh}
+            onUpdate={() => application.serverGroups.refresh()}
           />
         </div>
 

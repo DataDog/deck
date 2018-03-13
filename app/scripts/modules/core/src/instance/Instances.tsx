@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { UIRouterContext } from '@uirouter/react-hybrid';
+import * as PropTypes from 'prop-types';
 import { Transition } from '@uirouter/core';
 import { BindAll } from 'lodash-decorators';
 import { Subscription } from 'rxjs';
@@ -16,13 +16,12 @@ export interface IInstancesState {
   detailsInstanceId: string;
 }
 
-@UIRouterContext
 @BindAll()
 export class Instances extends React.Component<IInstancesProps, IInstancesState> {
   // context from enclosing UIView
   public static contextTypes = {
-    router: React.PropTypes.object,
-    parentUIViewAddress: React.PropTypes.object,
+    router: PropTypes.object,
+    parentUIViewAddress: PropTypes.object,
   };
 
   private subscription: Subscription;
@@ -31,7 +30,7 @@ export class Instances extends React.Component<IInstancesProps, IInstancesState>
     super(props);
     this.state = {
       detailsInstanceId: null,
-    }
+    };
   }
 
   public componentDidMount() {
@@ -49,7 +48,7 @@ export class Instances extends React.Component<IInstancesProps, IInstancesState>
   }
 
   public shouldComponentUpdate(nextProps: IInstancesProps, nextState: IInstancesState) {
-    const propsKeys: [keyof IInstancesProps] = ['instances', 'highlight'];
+    const propsKeys: (keyof IInstancesProps)[] = ['instances', 'highlight'];
     if (propsKeys.some(key => this.props[key] !== nextProps[key])) {
       return true;
     }

@@ -12,7 +12,7 @@
         Actions
         <span class="caret"></span>
       </button>
-      <ul class="dropdown-menu" uib-dropdown-menu role="menu">
+      <ul class="dropdown-menu" uib-dropdown-menu uib-dropdown-append-to-body="true" role="menu">
         <li><a href ng-controller="RestartStageCtrl as restartCtrl"
                analytics-on="click"
                analytics-category="Pipeline"
@@ -55,6 +55,6 @@
   </table>
   <div ng-if="stageSummary.comments">
     <strong>Comments</strong>
-    <p ng-bind-html="stageSummary.comments"></p>
+    <p ng-bind-html="$ctrl.getComments()"></p>
   </div>
 </div>

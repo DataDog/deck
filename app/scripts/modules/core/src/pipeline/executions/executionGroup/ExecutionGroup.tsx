@@ -8,11 +8,14 @@ import { BindAll } from 'lodash-decorators';
 
 import { Application } from 'core/application/application.model';
 import { Execution } from '../execution/Execution';
-import { IExecution, IExecutionGroup, IPipeline, IPipelineCommand } from 'core/domain';
+import { IExecution, IExecutionGroup, IExecutionTrigger, IPipeline, IPipelineCommand } from 'core/domain';
 import { NextRunTag } from 'core/pipeline/triggers/NextRunTag';
-import { Tooltip } from 'core/presentation/Tooltip';
+import { Popover } from 'core/presentation/Popover';
+
 import { TriggersTag } from 'core/pipeline/triggers/TriggersTag';
-import { NgReact, ReactInjector } from 'core/reactShims';
+import { AccountTag } from 'core/account';
+import { ReactInjector } from 'core/reactShims';
+import { Spinner } from 'core/widgets/spinners/Spinner'
 
 import './executionGroup.less';
 
@@ -101,10 +104,14 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
         monitor.then(() => this.setState({ triggeringExecution: false }));
         this.setState({ poll: monitor });
       },
-      () => this.setState({ triggeringExecution: false }));
+      () => {
+        const monitor = this.props.application.executions.refresh();
+        monitor.then(() => this.setState({ triggeringExecution: false }));
+        this.setState({ poll: monitor });
+      });
   }
 
-  public triggerPipeline(): void {
+  public triggerPipeline(trigger: IExecutionTrigger = null): void {
     ReactInjector.modalService.open({
       templateUrl: require('../../manualExecution/manualPipelineExecution.html'),
       controller: 'ManualPipelineExecutionCtrl as vm',
@@ -112,6 +119,7 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
         pipeline: () => this.state.pipelineConfig,
         application: () => this.props.application,
         currentlyRunningExecutions: () => this.props.group.runningExecutions,
+        trigger: () => trigger,
       }
     }).result.then((command) => this.startPipeline(command)).catch(() => {});
   }
@@ -160,8 +168,12 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
     e.stopPropagation();
   }
 
+  private rerunExecutionClicked(execution: IExecution): void {
+    ReactGA.event({ category: 'Pipeline', action: 'Rerun pipeline button clicked', label: this.props.group.heading });
+    this.triggerPipeline(execution.trigger);
+  }
+
   public render(): React.ReactElement<ExecutionGroup> {
-    const { AccountTag } = NgReact;
     const group = this.props.group;
     const pipelineConfig = this.state.pipelineConfig;
     const pipelineDisabled = pipelineConfig && pipelineConfig.disabled;
@@ -170,7 +182,10 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
 
     const deploymentAccountLabels = without(this.state.deploymentAccounts || [], ...(group.targetAccounts || [])).map((account: string) => <AccountTag key={account} account={account}/>);
     const groupTargetAccountLabels = (group.targetAccounts || []).map((account: string) => <AccountTag key={account} account={account}/>);
-    const executions = (group.executions || []).map((execution: IExecution) => <Execution key={execution.id} execution={execution} application={this.props.application}/>);
+    const executions = (group.executions || [])
+      .map((execution: IExecution) => (
+        <Execution key={execution.id} execution={execution} application={this.props.application} onRerun={this.rerunExecutionClicked}/>
+      ));
 
     return (
       <div className={`execution-group ${this.isShowingDetails() ? 'showing-details' : 'details-hidden'}`}>
@@ -184,8 +199,9 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
                   {groupTargetAccountLabels}
                 </div>
                 <h4 className="execution-group-title">
+                  {group.fromTemplate && <i className="from-template fa fa-table" title="Pipeline from template" />}
                   {group.heading}
-                  {pipelineDescription && <span> <Tooltip value={pipelineDescription}><span className="glyphicon glyphicon-info-sign"/></Tooltip></span>}
+                  {pipelineDescription && <span> <Popover value={pipelineDescription}><span className="glyphicon glyphicon-info-sign"/></Popover></span>}
                   {pipelineDisabled && <span> (disabled)</span>}
                   {hasRunningExecutions && <span> <span className="badge">{group.runningExecutions.length}</span></span>}
                 </h4>
@@ -203,7 +219,10 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
                       <h4 style={{ visibility: pipelineDisabled ? 'hidden' : 'visible' }}>
                         <a className="btn btn-xs btn-link" onClick={this.handleTriggerClicked}>
                           { this.state.triggeringExecution ?
-                            <span><span className="fa fa-cog fa-spin"/> Starting Manual Execution&hellip;</span> :
+                            <div className="horizontal middle inline-spinner">
+                              <Spinner size="nano" />
+                              <span>{' '}Starting Manual Execution</span>
+                            </div> :
                             <span><span className="glyphicon glyphicon-play"/> Start Manual Execution</span>
                           }
                         </a>
@@ -214,8 +233,7 @@ export class ExecutionGroup extends React.Component<IExecutionGroupProps, IExecu
               </div>
             </div>
           </div>
-        )
-        }
+        )}
         { this.state.open && (
           <div className="execution-groups">
             <div className="execution-group-container">

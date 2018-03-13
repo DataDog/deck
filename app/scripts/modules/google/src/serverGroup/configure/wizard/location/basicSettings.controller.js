@@ -21,7 +21,7 @@ module.exports = angular.module('spinnaker.google.serverGroup.configure.wizard.b
     function searchImages(q) {
       $scope.command.backingData.filtered.images = [
         {
-          message: '<span class="fa fa-cog fa-spin"></span> Finding results matching "' + q + '"...'
+          message: `<loading-spinner size="'nano'"></loading-spinner> Finding results matching "${q}"...`
         }
       ];
       return Observable.fromPromise(
@@ -97,4 +97,8 @@ module.exports = angular.module('spinnaker.google.serverGroup.configure.wizard.b
       }
     };
 
+    this.imageSources = [
+      'artifact',
+      'priorStage'
+    ];
   });

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { NgReact } from 'core/reactShims';
+import { AccountTag } from 'core/account';
 import { Application } from 'core/application/application.model';
 import { ILoadBalancerGroup } from 'core/domain';
 import { LoadBalancer } from './LoadBalancer';
@@ -18,7 +18,6 @@ export interface ILoadBalancerPodProps {
 export class LoadBalancerPod extends React.Component<ILoadBalancerPodProps> {
   public render(): React.ReactElement<LoadBalancerPod> {
     const { grouping, application, parentHeading, showServerGroups, showInstances } = this.props;
-    const { AccountTag } = NgReact;
     const subgroups = grouping.subgroups.map((subgroup) => (
       <LoadBalancer
         key={subgroup.heading}
@@ -37,7 +36,7 @@ export class LoadBalancerPod extends React.Component<ILoadBalancerPodProps> {
             <div className="heading-tag">
               <AccountTag account={parentHeading}/>
             </div>
-            <div className="pod-center">
+            <div className="pod-center horizontal space-between center flex-1">
               <div>
                 {grouping.heading}
               </div>

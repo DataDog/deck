@@ -44,7 +44,13 @@
           <help-field key="pipeline.config.artifact.help"></help-field>
         </p>
       </div>
-      <expected-artifact ng-repeat="expectedArtifact in pipeline.expectedArtifacts" expected-artifact="expectedArtifact" pipeline="pipeline" application="application"></expected-artifact>
+      <expected-artifact
+        use-prior-execution
+        ng-repeat="expectedArtifact in pipeline.expectedArtifacts"
+        expected-artifact="expectedArtifact"
+        context="pipeline"
+        remove-expected-artifact="triggersCtrl.removeExpectedArtifact">
+      </expected-artifact>
       <hr/>
       <div class="row" ng-if="!pipeline.expectedArtifacts.length">
         <p class="col-md-12">
@@ -70,7 +76,7 @@
         <textarea class="form-control"
                   ng-model="pipeline.description"
                   rows="3"
-                  placeholder="(Optional) anything that might be helpful to explain the purpose of this pipeline"></textarea>
+                  placeholder="(Optional) anything that might be helpful to explain the purpose of this pipeline; Markdown is okay"></textarea>
       </div>
     </div>
   </page-section>

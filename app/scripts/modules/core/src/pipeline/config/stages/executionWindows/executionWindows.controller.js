@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 
 import { EXECUTION_WINDOW_ATLAS_GRAPH } from './atlasGraph.component';
 import { EXECUTION_WINDOWS_DAY_PICKER } from './executionWindowDayPicker.component';
+import { DEFAULT_SKIP_WINDOW_TEXT } from './ExecutionWindowActions';
 
 module.exports = angular.module('spinnaker.core.pipeline.stage.executionWindows.controller', [
   require('core/utils/timePicker.service.js').name,
@@ -14,6 +15,7 @@ module.exports = angular.module('spinnaker.core.pipeline.stage.executionWindows.
   .controller('ExecutionWindowsCtrl', function($scope, timePickerService) {
 
     this.windowsUpdatedStream = new Subject();
+    this.enableCustomSkipWindowText = false;
 
     $scope.hours = timePickerService.getHours();
     $scope.minutes = timePickerService.getMinutes();
@@ -121,7 +123,9 @@ module.exports = angular.module('spinnaker.core.pipeline.stage.executionWindows.
           $scope.stage.restrictedExecutionWindow.jitter.skipManual = true;
         }
       } else {
-        delete $scope.stage.restrictedExecutionWindow.jitter;
+        if ($scope.stage.restrictedExecutionWindow) {
+          delete $scope.stage.restrictedExecutionWindow.jitter;
+        }
       }
     };
 
@@ -142,6 +146,9 @@ module.exports = angular.module('spinnaker.core.pipeline.stage.executionWindows.
         left: (hour.key / 24 * 100) + '%',
       });
     });
+
+    this.enableCustomSkipWindowText = !!$scope.stage.skipWindowText;
+    this.defaultSkipWindowText = DEFAULT_SKIP_WINDOW_TEXT;
 
     $scope.$watch('stage.restrictedExecutionWindow.whitelist', this.updateTimelineWindows, true);
     $scope.$watch('stage.restrictExecutionDuringTimeWindow', this.toggleWindowRestriction);

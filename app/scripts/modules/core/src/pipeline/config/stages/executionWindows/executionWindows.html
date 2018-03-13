@@ -1,10 +1,19 @@
 <div class="form-group">
   <div class="col-md-9 col-md-offset-1">
-    <div class="checkbox">
+    <div class="checkbox" ng-if="!stage.restrictExecutionDuringTimeWindow.includes('${')">
       <label>
-        <input type="checkbox" ng-false-value="undefined" ng-model="stage.restrictExecutionDuringTimeWindow"/>
+        <input type="checkbox"
+               ng-false-value="undefined"
+               ng-model="stage.restrictExecutionDuringTimeWindow"/>
         <strong> Restrict execution to specific time windows</strong>
       </label>
+    </div>
+    <div class="row" ng-if="stage.restrictExecutionDuringTimeWindow.includes('${')" style="margin-top: 20px">
+      <strong> Restrict execution to specific time windows when this expression is true</strong>
+      <input type="text"
+             class="form-control input-sm"
+             ng-model="stage.restrictExecutionDuringTimeWindow"/>
+
     </div>
   </div>
 </div>
@@ -137,6 +146,24 @@
       </div>
     </div>
   </div>
+  <div class="form-group">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="checkbox">
+        <label>
+          <input type="checkbox" ng-model="executionWindowsCtrl.enableCustomSkipWindowText"/>
+          <strong> Show custom warning when users skip execution window</strong>
+        </label>
+      </div>
+    </div>
+    <div class="col-md-10 col-md-offset-1 checkbox-padding" ng-if="executionWindowsCtrl.enableCustomSkipWindowText">
+      <textarea class="form-control"
+                rows="4"
+                placeholder="Default text: '{{executionWindowsCtrl.defaultSkipWindowText}}' (HTML is okay)"
+                style="margin-top: 5px"
+                ng-model="stage.skipWindowText"/>
+    </div>
+  </div>
+
   <execution-window-atlas-graph stage="stage"
                                 windows="timelineWindows"
                                 windows-updated="executionWindowsCtrl.windowsUpdatedStream"></execution-window-atlas-graph>

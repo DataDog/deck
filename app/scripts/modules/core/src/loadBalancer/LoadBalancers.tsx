@@ -4,11 +4,13 @@ import { Subscription } from 'rxjs';
 
 import { Application } from 'core/application/application.model';
 import { FilterTags, IFilterTag } from 'core/filterModel/FilterTags';
-import { ILoadBalancer, ILoadBalancerGroup } from 'core/domain';
+import { ISortFilter } from 'core/filterModel/IFilterModel';
+import { ILoadBalancerGroup } from 'core/domain';
 import { LoadBalancerPod } from './LoadBalancerPod';
-import { Tooltip } from 'core/presentation/Tooltip';
+import { Spinner } from 'core/widgets/spinners/Spinner';
 
 import { NgReact, ReactInjector } from 'core/reactShims';
+import { CreateLoadBalancerButton } from 'core/loadBalancer/CreateLoadBalancerButton';
 
 export interface ILoadBalancersProps {
   app: Application;
@@ -51,7 +53,6 @@ export class LoadBalancers extends React.Component<ILoadBalancersProps, ILoadBal
   }
 
   public componentWillUnmount(): void {
-    this.props.app.setActiveState();
     this.groupsUpdatedListener.unsubscribe();
     this.loadBalancersRefreshUnsubscribe();
   }
@@ -81,27 +82,6 @@ export class LoadBalancers extends React.Component<ILoadBalancersProps, ILoadBal
     this.updateLoadBalancerGroups();
   }
 
-  private createLoadBalancer(): void {
-    const { providerSelectionService, cloudProviderRegistry, versionSelectionService } = ReactInjector;
-    const { app } = this.props;
-    providerSelectionService.selectProvider(app, 'loadBalancer').then((selectedProvider) => {
-      versionSelectionService.selectVersion(selectedProvider).then((selectedVersion) => {
-        const provider = cloudProviderRegistry.getValue(selectedProvider, 'loadBalancer', selectedVersion);
-        ReactInjector.modalService.open({
-          templateUrl: provider.createLoadBalancerTemplateUrl,
-          controller: `${provider.createLoadBalancerController} as ctrl`,
-          size: 'lg',
-          resolve: {
-            application: () => app,
-            loadBalancer: (): ILoadBalancer => null,
-            isNew: () => true,
-            forPipelineConfig: () => false
-          }
-        }).result.catch(() => {});
-      });
-    });
-  };
-
   private updateUIState(state: ILoadBalancersState): void {
     const params: any = {
       hideServerGroups: undefined,
@@ -119,7 +99,7 @@ export class LoadBalancers extends React.Component<ILoadBalancersProps, ILoadBal
   private handleInputChange(event: any): void {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
-    const name = target.name;
+    const name: keyof ISortFilter = target.name;
 
     ReactInjector.loadBalancerFilterModel.asFilterModel.sortFilter[name] = value;
 
@@ -134,7 +114,7 @@ export class LoadBalancers extends React.Component<ILoadBalancersProps, ILoadBal
   }
 
   public render(): React.ReactElement<LoadBalancers> {
-    const { LegacySpinner, HelpField } = NgReact;
+    const { HelpField } = NgReact;
     const groupings = this.state.initialized ? (
       <div>
         { this.state.groups.map((group) => (
@@ -155,7 +135,7 @@ export class LoadBalancers extends React.Component<ILoadBalancersProps, ILoadBal
       </div>
     ) : (
       <div>
-        <h3><LegacySpinner radius={30} width={8} length={16}/></h3>
+        <Spinner size="medium" />
       </div>
     );
 
@@ -181,13 +161,7 @@ export class LoadBalancers extends React.Component<ILoadBalancersProps, ILoadBal
           <div className="col-lg-4 col-md-2">
             <div className="form-inline clearfix filters"/>
             <div className="application-actions">
-              <button className="btn btn-sm btn-default" onClick={this.createLoadBalancer}>
-                <span className="glyphicon glyphicon-plus-sign visible-lg-inline"/>
-                <Tooltip value="Create Load Balancer">
-                  <span className="glyphicon glyphicon-plus-sign visible-md-inline visible-sm-inline"/>
-                </Tooltip>
-                <span className="visible-lg-inline"> Create Load Balancer</span>
-              </button>
+              <CreateLoadBalancerButton app={this.props.app} />
             </div>
           </div>
           <FilterTags tags={this.state.tags} tagCleared={this.tagCleared} clearFilters={this.clearFilters}/>

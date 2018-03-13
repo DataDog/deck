@@ -34,7 +34,8 @@ module.exports = angular
     let tagLoadSuccess = (tags) => {
       this.tags = tags;
       if (this.tags.length) {
-        let defaultSelection = this.tags[0];
+        // default to what is supplied by the trigger if possible; otherwise, use the latest
+        let defaultSelection = this.tags.find(t => t === this.command.trigger.tag) || this.tags[0];
         this.viewState.selectedTag = defaultSelection;
         this.updateSelectedTag(defaultSelection);
       }
@@ -64,8 +65,22 @@ module.exports = angular
         }));
     };
 
-    this.updateSelectedTag = (item) => {
-      this.command.extraFields.tag = item;
+    this.updateSelectedTag = (tag) => {
+      this.command.extraFields.tag = tag;
+
+      if (this.command.trigger && this.command.trigger.repository) {
+        let imageName = '';
+        if (this.command.trigger.registry) {
+          imageName += this.command.trigger.registry + '/';
+        }
+        imageName += this.command.trigger.repository;
+        this.command.extraFields.artifacts = [{
+          type: 'docker/image',
+          name: imageName,
+          version: tag,
+          reference: imageName + ':' + tag,
+        }];
+      }
     };
 
     let queryStream = new Subject();
