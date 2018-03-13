@@ -1,0 +1,7 @@
+Package: dd-spinnaker-deck
+Section: spinnaker
+Architecture: amd64
+Maintainer: Compute <compute@datadoghq.com>
+Version: 1
+Description: custom spinnaker deck deb
+

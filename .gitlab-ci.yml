@@ -1,0 +1,13 @@
+stages:
+  - package
+
+package:
+  stage: package
+  except: [ tags ]
+  tags: [ "runner:main", "size:large" ]
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/packager:trusty
+  script:
+    - mkdir /buildroot
+    - ( cd "deb/"; ./build.sh )
+    - dd-build-package /buildroot dd-spinnaker-deck.deb
+    - dd-upload-package dd-spinnaker-deck.deb build $CI_COMMIT_REF_NAME
