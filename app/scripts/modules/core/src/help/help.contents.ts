@@ -73,7 +73,8 @@ module(HELP_CONTENTS, [])
         <p>Please include an email address or slack channel as appropriate.</p>`,
     'pipeline.config.optionalStage': `
         <p>When this option is enabled, stage will only execute when the supplied expression evaluates true.</p>
-        <p>The expression <em>does not</em> need to be wrapped in \${ and }.</p>`,
+        <p>The expression <em>does not</em> need to be wrapped in \${ and }.</p>
+        <p>If this expression evaluates to false, the stages following this stage will still execute.</p>`,
     'pipeline.config.checkPreconditions.failPipeline': `
         <p><strong>Checked</strong> - the overall pipeline will fail whenever this precondition is false.</p>
         <p><strong>Unchecked</strong> - the overall pipeline will continue executing but this particular branch will stop.</p>`,
@@ -216,7 +217,6 @@ module(HELP_CONTENTS, [])
     '<p><strong>Example: every Monday at 10 am</strong></p><samp>0 0 10 ? * 2</samp>' +
     '<p><strong>Note:</strong> values for "DayOfWeek" are 1-7, where Sunday is 1, Monday is 2, etc. You can also use MON,TUE,WED, etc.',
 
-    'cluster.description': '<p>A cluster is a collection of server groups with the same name (stack + detail) in the same account.</p>',
     'cluster.rollback.explicit': `
         <p>A server group running the previous build will be enabled and appropriately resized.</p>
         <p>The current server group will be disabled after the resize completes.</p>
@@ -260,6 +260,10 @@ module(HELP_CONTENTS, [])
     'strategy.rollingPush.relaunchAll': '<p>Incrementally terminates each instance in the server group, waiting for a new one to come up before terminating the next one.</p>',
     'strategy.rollingPush.totalRelaunches': '<p>Total number of instances to terminate and relaunch.</p>',
     'strategy.rollingPush.concurrentRelaunches': '<p>Number of instances to terminate and relaunch at a time.</p>',
+    'strategy.rollingPush.concurrentRelaunches.migration': `
+      <p>Number of instances to terminate and relaunch at a time.</p>
+      <p>Can be expressed as an explicit instance count or as a percentage of instances in server group being migrated.</p>
+    `,
     'strategy.rollingPush.order': `
         <p>Determines the order in which instances will be terminated.
         <ul><li><b>Oldest</b> will terminate the oldest instances first</li>

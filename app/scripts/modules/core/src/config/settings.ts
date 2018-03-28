@@ -50,6 +50,11 @@ export interface ISecurityGroupsSettings {
   disableCrossAccountRules: boolean;
 }
 
+export interface IDockerInsightSettings {
+  enabled: boolean;
+  url: string;
+}
+
 export interface ISpinnakerSettings {
   [key: string]: any;
 
@@ -92,6 +97,7 @@ export interface ISpinnakerSettings {
   searchVersion: 1 | 2;
   securityGroups: ISecurityGroupsSettings;
   triggerTypes: string[];
+  dockerInsights: IDockerInsightSettings;
 }
 
 export const SETTINGS: ISpinnakerSettings = (<any>window).spinnakerSettings;
@@ -101,6 +107,7 @@ SETTINGS.feature = SETTINGS.feature || {};
 SETTINGS.analytics = SETTINGS.analytics || {};
 SETTINGS.providers = SETTINGS.providers || {};
 SETTINGS.defaultTimeZone = SETTINGS.defaultTimeZone || 'America/Los_Angeles';
+SETTINGS.dockerInsights = SETTINGS.dockerInsights || { enabled: false, url: '' };
 
 // A helper to make resetting settings to steady state after running tests easier
 const originalSettings: ISpinnakerSettings = cloneDeep(SETTINGS);

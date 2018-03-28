@@ -5,13 +5,19 @@ const basePath = path.join(__dirname, '..', '..', '..', '..');
 const NODE_MODULE_PATH = path.join(basePath, 'node_modules');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
-const webpack = require('webpack');
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const exclusionPattern = /(node_modules|\.\.\/deck)/;
+const WEBPACK_THREADS = Math.max(require('physical-cpu-count') - 1, 1);
+
+const WATCH = process.env.WATCH === 'true';
+const WEBPACK_MODE = WATCH ? 'development' : 'production';
+const IS_PRODUCTION = WEBPACK_MODE === 'production';
 
 module.exports = {
   context: basePath,
-  stats: 'errors-only',
-  devtool: 'source-map',
+  mode: WEBPACK_MODE,
+  stats: 'minimal',
+  watch: WATCH,
   entry: {
     lib: path.join(__dirname, 'src', 'index.ts'),
   },
@@ -22,11 +28,17 @@ module.exports = {
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },
-  externals: [
-    '@spinnaker/core',
-    'exports-loader?"n3-line-chart"!n3-charts/build/LineChart.js',
-    nodeExternals({ modulesDir: '../../../../node_modules' }),
-  ],
+  devtool: 'source-map',
+  optimization: {
+    minimizer: IS_PRODUCTION ? [
+      new UglifyJSPlugin({
+        cache: true,
+        parallel: true,
+        sourceMap: true,
+        uglifyOptions: { mangle: false }
+      })
+    ] : [], // disable minification in development mode
+  },
   resolve: {
     extensions: ['.json', '.js', '.jsx', '.ts', '.tsx', '.css', '.less', '.html'],
     modules: [
@@ -39,17 +51,16 @@ module.exports = {
       'amazon': path.join(__dirname, 'src')
     }
   },
-  watch:  process.env.WATCH === 'true',
   module: {
     rules: [
       {
         test: /\.js$/,
         use: [
           { loader: 'cache-loader' },
-          { loader: 'thread-loader', options: { workers: 3 } },
+          { loader: 'thread-loader', options: { workers: WEBPACK_THREADS } },
           { loader: 'babel-loader' },
           { loader: 'envify-loader' },
-          { loader: 'eslint-loader' } ,
+          { loader: 'eslint-loader' },
         ],
         exclude: exclusionPattern
       },
@@ -57,7 +68,7 @@ module.exports = {
         test: /\.tsx?$/,
         use: [
           { loader: 'cache-loader' },
-          { loader: 'thread-loader', options: { workers: 3 } },
+          { loader: 'thread-loader', options: { workers: WEBPACK_THREADS } },
           { loader: 'babel-loader' },
           { loader: 'ts-loader', options: { happyPackMode: true } },
           { loader: 'tslint-loader' },
@@ -90,12 +101,6 @@ module.exports = {
         ]
       },
       {
-        test: /\.json$/,
-        use: [
-          { loader: 'json-loader' },
-        ],
-      },
-      {
         test: /\.(woff|woff2|otf|ttf|eot|png|gif|ico|svg)$/,
         use: [
           { loader: 'file-loader', options: { name: '[name].[hash:5].[ext]'} },
@@ -112,11 +117,10 @@ module.exports = {
   },
   plugins: [
     new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true }),
-    new webpack.optimize.UglifyJsPlugin({
-      mangle: false,
-      beautify: true,
-      comments: false,
-      sourceMap: true,
-    }),
+  ],
+  externals: [
+    '@spinnaker/core',
+    'exports-loader?"n3-line-chart"!n3-charts/build/LineChart.js',
+    nodeExternals({ modulesDir: '../../../../node_modules' }),
   ],
 };
