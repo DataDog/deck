@@ -6,6 +6,7 @@ export interface IVariable {
   type: string;
   errors?: IVariableError[];
   hideErrors?: boolean;
+  options?: string[];
 }
 
 export interface IVariableError {
@@ -34,7 +35,11 @@ export class VariableInputService {
     this.inputs.add(input);
   }
 
-  public static getInputForType(type = 'string'): IVariableInputBuilder {
-    return Array.from(this.inputs).find(i => i.handles(type));
+  public static getInputForType(type = 'string', defaultValue: any): IVariableInputBuilder {
+    let inputType = type;
+    if (type === 'string' && Array.isArray(defaultValue)) {
+      inputType = 'select';
+    }
+    return Array.from(this.inputs).find(i => i.handles(inputType));
   }
 }
