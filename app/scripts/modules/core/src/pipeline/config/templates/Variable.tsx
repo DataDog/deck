@@ -21,6 +21,8 @@ export class Variable extends React.Component<IVariableProps> {
 
     let { variable } = this.props;
 
+    // Ducktype the variable and provide the options if it should be
+    // a SelectInput component (defaultValue is []string)
     if (type === 'string' && Array.isArray(defaultValue)) {
       variable = {
         ...variable,

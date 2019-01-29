@@ -1,17 +1,10 @@
 import * as React from 'react';
 import Select, { Option } from 'react-select';
 import { VariableError } from '../VariableError';
+import { IVariableInputBuilder, VariableInputService, IVariable, IVariableProps } from './variableInput.service';
 
-import {
-  IVariableInputBuilder,
-  VariableInputService,
-  IVariable,
-  IVariableProps,
-  IVariableState,
-} from './variableInput.service';
-import { values } from 'd3';
-
-// Merges with existing interface
+// Trying to merge this with the imported interface in variableInput.service
+// caused type errors so its duplicated here in the form we need
 export interface IVariableState {
   selectedOption: string;
 }
@@ -21,7 +14,7 @@ class SelectInput extends React.Component<IVariableProps, IVariableState> {
     super(props);
     const { variable } = this.props;
     this.state = {
-      selectedOption: Array.isArray(variable.value) ? variable.value[0] : variable.value,
+      selectedOption: Array.isArray(variable.value) ? variable.value[0] : (variable.value as string),
     };
   }
 
@@ -44,7 +37,6 @@ class SelectInput extends React.Component<IVariableProps, IVariableState> {
     return (
       <div>
         <Select options={options} clearable={false} value={selectedOption} onChange={this.handleSelectChange} />
-
         {!this.props.variable.hideErrors && <VariableError errors={this.props.variable.errors} />}
       </div>
     );

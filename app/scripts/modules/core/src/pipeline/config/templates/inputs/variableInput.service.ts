@@ -35,6 +35,8 @@ export class VariableInputService {
     this.inputs.add(input);
   }
 
+  // We do some duck typing of the variable to see if we should render it
+  // in a SelectInput if the defaultValue is an array.
   public static getInputForType(type = 'string', defaultValue: any): IVariableInputBuilder {
     let inputType = type;
     if (type === 'string' && Array.isArray(defaultValue)) {
