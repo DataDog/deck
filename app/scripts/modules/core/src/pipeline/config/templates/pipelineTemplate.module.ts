@@ -8,6 +8,7 @@ import './inputs/BooleanInput';
 import './inputs/ListInput';
 import './inputs/NumberInput';
 import './inputs/ObjectInput';
+import './inputs/SelectInput';
 import './inputs/StringInput';
 
 import './validators/list.validator';

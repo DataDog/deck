@@ -10,12 +10,28 @@ export interface IVariableProps {
   variableMetadata: IVariableMetadata;
   variable: IVariable;
   onChange: (variable: IVariable) => void;
+  options?: string[];
 }
 
 export class Variable extends React.Component<IVariableProps> {
   private getVariableInput(): JSX.Element {
-    const input: IVariableInputBuilder = VariableInputService.getInputForType(this.props.variableMetadata.type);
-    return input ? input.getInput(this.props.variable, this.props.onChange) : null;
+    const {
+      variableMetadata: { type, defaultValue },
+    } = this.props;
+
+    let { variable } = this.props;
+
+    // Ducktype the variable and provide the options if it should be
+    // a SelectInput component (defaultValue is []string)
+    if (type === 'string' && Array.isArray(defaultValue)) {
+      variable = {
+        ...variable,
+        options: defaultValue as string[],
+      };
+    }
+
+    const input: IVariableInputBuilder = VariableInputService.getInputForType(type, defaultValue);
+    return input ? input.getInput(variable, this.props.onChange) : null;
   }
 
   public render() {
