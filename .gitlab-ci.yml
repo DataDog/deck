@@ -1,0 +1,43 @@
+stages:
+  - ci-image
+  - tests
+  - notify
+
+ci-image:
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:18.03.1
+  stage: ci-image
+  only:
+    changes:
+      - Dockerfile
+    refs:
+      - datadog-build
+  tags: [ "runner:docker", "size:large" ]
+  script:
+    - docker build --tag 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/deck:latest .
+    - docker push 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/deck:latest
+
+tests:
+  stage: tests
+  tags: [ "runner:docker", "size:large" ]
+  image: $BUILDENV_REGISTRY/ci/gitlab-dialtone:$CURRENT_CI_IMAGE
+  script:
+    -  ./gradlew assemble
+
+failure:
+  image: $BUILDENV_REGISTRY/slack-notifier:latest
+  tags: [ "runner:main", "size:large" ]
+  except: [ triggers, tags, schedules, dialtone ]
+  stage: notify
+  when: on_failure
+  script:
+    # If the pipeline was launched by a user, send pings to him (eg, creating a pipe on master without commiting)
+    - if [[ $GITLAB_USER_LOGIN = "gitsync" ]]; then EMAIL=$(git show -s --format="%ae" HEAD); else EMAIL=$GITLAB_USER_EMAIL; fi
+
+    # Map email to slack handle
+    - SLACK_AUTHOR=$(echo $EMAIL | email2slack | slackuser2id | slackignore)
+    - if [ -z "$SLACK_AUTHOR" ]; then echo "author not found or unsubscribed"; exit 0; fi
+
+    - BUILD_URL="$CI_PROJECT_URL/pipelines/$CI_PIPELINE_ID"
+    - 'MESSAGE_TEXT=":host-red: $CI_PROJECT_NAME $CI_COMMIT_REF_NAME pipeline <$BUILD_URL|$CI_PIPELINE_ID> failed."'
+
+    - postmessage "$SLACK_AUTHOR" "$MESSAGE_TEXT"
