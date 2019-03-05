@@ -8,7 +8,7 @@ ci-image:
   stage: ci-image
   only:
     changes:
-      - datadog/Dockerfile
+      - Dockerfile
     refs:
       - datadog-build
       - engtools/243/gitlab_builds_for_deck
