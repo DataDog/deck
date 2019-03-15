@@ -20,12 +20,12 @@ ci-image:
 tests:
   stage: tests
   tags: ['runner:docker', 'size:large']
-  image: $BUILDENV_REGISTRY/ci/deck:latest
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com//ci/deck:latest
   script:
     - ./gradlew assemble
 
 failure:
-  image: $BUILDENV_REGISTRY/slack-notifier:latest
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com//slack-notifier:latest
   tags: ['runner:main', 'size:large']
   stage: notify
   when: on_failure
