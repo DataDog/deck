@@ -6,12 +6,12 @@ stages:
 ci-image:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:18.03.1
   stage: ci-image
-  only:
-    changes:
-      - Dockerfile
-    refs:
-      - datadog-build
-      - engtools/243/gitlab_builds_for_deck
+  # only:
+  #   changes:
+  #     - Dockerfile
+  #   refs:
+  #     - datadog-build
+  #     - engtools/243/gitlab_builds_for_deck
   tags: ['runner:docker', 'size:large']
   script:
     - docker build --tag 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/deck:latest .
